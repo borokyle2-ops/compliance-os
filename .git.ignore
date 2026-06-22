@@ -1,0 +1,17 @@
+```text
+   # Python structural clutter
+   __pycache__/
+   .pytest_cache/
+   *.pyc
+   
+   # Local relational database weights
+   data/compliance_os.db
+   data/*.db
+   
+   # System logs & tracking streams
+   logs/
+   *.log
+   
+   # Virtual Environment files
+   venv/
+   .venv/

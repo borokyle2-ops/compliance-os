@@ -1,0 +1,28 @@
+2026-06-13 13:22:02,116 | INFO | ==================================================
+2026-06-13 13:22:02,116 | INFO | Master Pipeline Started
+2026-06-13 13:22:02,116 | ERROR | World Bank pipeline error: No module named 'src'
+2026-06-13 13:22:02,117 | ERROR | Forex pipeline error: No module named 'src'
+2026-06-13 13:22:02,117 | ERROR | Wise pipeline error: No module named 'src'
+2026-06-13 13:22:02,117 | INFO | Pipeline Complete: 0/3 sources succeeded in 0s
+2026-06-13 13:22:02,117 | INFO | ==================================================
+2026-06-13 13:24:02,048 | INFO | ==================================================
+2026-06-13 13:24:02,048 | INFO | Master Pipeline Started
+2026-06-13 13:24:02,048 | ERROR | World Bank pipeline error: No module named 'src'
+2026-06-13 13:24:02,049 | ERROR | Forex pipeline error: No module named 'src'
+2026-06-13 13:24:02,049 | ERROR | Wise pipeline error: No module named 'src'
+2026-06-13 13:24:02,049 | INFO | Pipeline Complete: 0/3 sources succeeded in 0s
+2026-06-13 13:24:02,049 | INFO | ==================================================
+2026-06-13 14:08:43,609 | INFO | ==================================================
+2026-06-13 14:08:43,609 | INFO | Master Pipeline Started
+2026-06-13 14:08:43,610 | ERROR | World Bank pipeline error: No module named 'src'
+2026-06-13 14:08:43,610 | ERROR | Forex pipeline error: No module named 'src'
+2026-06-13 14:08:43,611 | ERROR | Wise pipeline error: No module named 'src'
+2026-06-13 14:08:43,611 | INFO | Pipeline Complete: 0/3 sources succeeded in 0s
+2026-06-13 14:08:43,611 | INFO | ==================================================
+2026-06-22 16:28:27,403 | INFO | ==================================================
+2026-06-22 16:28:27,403 | INFO | Master Pipeline Started
+2026-06-22 16:28:27,404 | ERROR | World Bank pipeline error: No module named 'src'
+2026-06-22 16:28:27,404 | ERROR | Forex pipeline error: No module named 'src'
+2026-06-22 16:28:27,404 | ERROR | Wise pipeline error: No module named 'src'
+2026-06-22 16:28:27,404 | INFO | Pipeline Complete: 0/3 sources succeeded in 0s
+2026-06-22 16:28:27,404 | INFO | ==================================================
