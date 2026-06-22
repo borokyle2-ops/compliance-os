@@ -75,7 +75,8 @@ def fetch_african_intelligence():
                     source_currency,
                     dest_currency,
                     exchange_rate,
-                    strftime(as_of_date, '%Y-%m-%d %H:%M') AS updated
+                    strftime(as_of_date, '%Y-%m-%d %H:%M') AS updated,
+                    status
                 FROM dim_forex_rates
                 ORDER BY source_code, destination_code
             """).df()
@@ -176,7 +177,7 @@ with tab_dashboard:
          pie_data = filtered["G20_Status"].value_counts().reset_index()
          pie_data.columns = ["Status", "Count"]
          fig_pie = px.pie(
-             pie_data, names="Status", values="Count", hole=0.55, # Adjusted hole ratio for a modern donut profile
+             pie_data, names="Status", values="Count", hole=0.55,
              color="Status", color_discrete_map={"COMPLIANT": "#00CC66", "WARNING": "#FFAA00", "NON-COMPLIANT": "#FF4444"}
          )
          fig_pie.update_layout(
@@ -196,7 +197,6 @@ with tab_dashboard:
              labels={"total_cost_percent": "Total Cost %", "G20_Status": "Status"}
          )
          
-         # INSTALLED OVERLAP PREVENTION STEPS (Vertical stagger alignment to fix the 6_43_26 layout overlap)
          fig_hist.add_vline(x=3.0, line_dash="dash", line_color="#00CC66", 
                             annotation_text="3% G20 Target", annotation_position="top right", 
                             annotation_font_color="#00CC66", annotation_font_size=11)
@@ -213,7 +213,7 @@ with tab_dashboard:
              yaxis_title="Corridor Frequency", 
              xaxis_range=[0, 22],
              margin=dict(t=30, b=10, l=10, r=10),
-             showlegend=False # Stripped duplicate background legend to save space
+             showlegend=False
          )
          st.plotly_chart(fig_hist, use_container_width=True)
 
@@ -239,7 +239,6 @@ with tab_dashboard:
             text=top10["stablecoin_cost_percent"].apply(lambda x: f" {x:.2f}% "), textposition='outside'
        ))
     
-       # INSTALLED BOUNDARY ANNOTATION (Fixed bar text overlap from the 6_43_37 layout)
        fig_bar.add_vline(x=3.0, line_dash="dash", line_color="#00CC66", 
                          annotation_text="G20 Target (3%)", annotation_position="top left")
        
@@ -265,8 +264,8 @@ with tab_dashboard:
         column_config={
             "source_name": st.column_config.TextColumn("Sending Country"),
             "destination_name": st.column_config.TextColumn("Receiving Country"),
-            "total_cost_percent": st.column_config.NumberColumn("Traditional Cost %", format="%.2f%%"), # Enforces structural precision masking
-            "stablecoin_cost_percent": st.column_config.NumberColumn("Web3 Model Cost %", format="%.2f%%"),   # Formatted as clean percentage
+            "total_cost_percent": st.column_config.NumberColumn("Traditional Cost %", format="%.2f%%"),
+            "stablecoin_cost_percent": st.column_config.NumberColumn("Web3 Model Cost %", format="%.2f%%"),
             "period": st.column_config.TextColumn("Reporting Frame"),
             "G20_Status": st.column_config.SelectboxColumn("Status Tag", options=["COMPLIANT", "WARNING", "NON-COMPLIANT"])
         },
@@ -283,7 +282,7 @@ with tab_dashboard:
     )
 
 with tab_african_intel:
-    col_a, col_b = st.columns([3,1])
+    col_a, col_b = st.columns([3, 1])
     with col_a:
         st.subheader("African Corridor Intelligence")
         st.caption("Multi-source comparison: World Bank vs Commercial providers vs Live FX")
@@ -291,6 +290,15 @@ with tab_african_intel:
         if not df_forex.empty:
             st.metric("Last Data Sync", df_forex["updated"].iloc[0][:10])
       
+    # SMART OFFLINE NETWORK STATUS ALERT SYSTEM
+    if not df_forex.empty:
+        network_status = df_forex["status"].iloc[0]
+        sync_timestamp = df_forex["updated"].iloc[0]
+        if "Cached" in network_status:
+            st.warning(f"⚠️ **Network Interrupted - Operating in Offline Mode:** Displaying cached market indices from your last successful sync ({sync_timestamp}). The pipeline will resume live streaming as soon as your device connects to the internet.")
+        else:
+            st.info(f"🟢 **Live Data Connection Secure:** Feeds are streaming smoothly from the primary market API gateway.")
+
     if not df_providers.empty:
         wise_compliant = len(df_providers[df_providers["total_cost_percent"] <= 3.0])
         wise_total = len(df_providers)
@@ -303,12 +311,9 @@ with tab_african_intel:
         
         # DYNAMIC ACCORDION WORKSPACE FOR COMMERCIAL DATA
         with st.expander("View Commercial Settlement Rail Pricing Matrix", expanded=True):
-            
-            # Extract unique origin/sending hubs present in your data for the selection box (e.g., 'GBP', 'USD')
             df_providers['src_hub'] = df_providers['corridor_key'].apply(lambda x: x.split(" - ")[0].strip() if " - " in x else x[:3])
             unique_wise_senders = sorted(df_providers['src_hub'].unique().tolist())
             
-            # Inline workspace controls
             c_filter1, c_filter2 = st.columns([1, 2])
             with c_filter1:
                 selected_wise_hub = st.selectbox(
@@ -317,18 +322,15 @@ with tab_african_intel:
                     help="Isolate specific source gateways to compare options clear of layout noise."
                 )
             
-            # Apply dynamic visualization filtration boundaries
             if selected_wise_hub != "All Global Hubs":
                 chart_df = df_providers[df_providers['src_hub'] == selected_wise_hub].sort_values(by="total_cost_percent", ascending=True)
                 chart_title = f"Wise Transfer Costs originating from {selected_wise_hub} Gateways"
                 chart_height = max(400, len(chart_df) * 24)
             else:
-                # Fallback to presenting a clean top 15 cost-effective summary snapshot to keep layout tidy
                 chart_df = df_providers.nsmallest(15, "total_cost_percent").sort_values(by="total_cost_percent", ascending=True)
                 chart_title = "Top 15 Most Cost-Effective Wise Corridors (Global Infrastructure Sample)"
                 chart_height = 450
             
-            # Render refined, gradient-mapped visual chart
             fig_provider = px.bar(
                 chart_df,
                 x="total_cost_percent",
@@ -337,7 +339,7 @@ with tab_african_intel:
                 color="total_cost_percent",
                 title=chart_title,
                 labels={"total_cost_percent": "Transfer Cost %", "corridor_key": ""},
-                color_continuous_scale=["#00CC66", "#FFAA00", "#FF4444"] # Smooth compliant-to-expensive gradient
+                color_continuous_scale=["#00CC66", "#FFAA00", "#FF4444"]
             )
             fig_provider.add_vline(x=3.0, line_dash="dash", line_color="white", annotation_text="G20 3% Target", annotation_position="top right", annotation_font_color="white")
             
@@ -363,15 +365,16 @@ with tab_african_intel:
         last_sync = df_forex["updated"].iloc[0] if not df_forex.empty else "N/A"
         st.caption(f"**{len(df_forex)} active** tracked African corridor channels | Last sync: **{last_sync}**")
 
-        # INTERACTIVE DATA GRID WITH FORMATTED PROGRESS BARS FOR MAXIMUM AESTHETICS       
+        # INTERACTIVE DATA GRID WITH FORMATTED FOREX DATA
         st.dataframe(
-            df_forex,
+            df_forex[["corridor", "source_currency", "dest_currency", "exchange_rate", "updated", "status"]],
             column_config={
                 "corridor": st.column_config.TextColumn("Remittance Route", width="medium"),
                 "source_currency": st.column_config.TextColumn("Source Code"),
                 "dest_currency": st.column_config.TextColumn("Target Asset"),
                 "exchange_rate": st.column_config.NumberColumn("Spot Rate Index", format="%.4f"),
                 "updated": st.column_config.TextColumn("Data Generation Log"),
+                "status": st.column_config.TextColumn("Network Feed Status"),
             },
             hide_index=True,
             use_container_width=True,
