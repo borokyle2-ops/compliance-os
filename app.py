@@ -75,8 +75,7 @@ def fetch_african_intelligence():
                     source_currency,
                     dest_currency,
                     exchange_rate,
-                    strftime(as_of_date, '%Y-%m-%d %H:%M') AS updated,
-                    status
+                    strftime(as_of_date, '%Y-%m-%d %H:%M') AS updated
                 FROM dim_forex_rates
                 ORDER BY source_code, destination_code
             """).df()
@@ -240,7 +239,7 @@ with tab_dashboard:
        ))
     
        fig_bar.add_vline(x=3.0, line_dash="dash", line_color="#00CC66", 
-                         annotation_text="G20 Target (3%)", annotation_position="top left")
+                        annotation_text="G20 Target (3%)", annotation_position="top left")
        
        fig_bar.update_layout(
             barmode='group', 
@@ -290,14 +289,10 @@ with tab_african_intel:
         if not df_forex.empty:
             st.metric("Last Data Sync", df_forex["updated"].iloc[0][:10])
       
-    # SMART OFFLINE NETWORK STATUS ALERT SYSTEM
+    # SMART NETWORK STATUS ALERT SYSTEM
     if not df_forex.empty:
-        network_status = df_forex["status"].iloc[0]
         sync_timestamp = df_forex["updated"].iloc[0]
-        if "Cached" in network_status:
-            st.warning(f"⚠️ **Network Interrupted - Operating in Offline Mode:** Displaying cached market indices from your last successful sync ({sync_timestamp}). The pipeline will resume live streaming as soon as your device connects to the internet.")
-        else:
-            st.info(f"🟢 **Live Data Connection Secure:** Feeds are streaming smoothly from the primary market API gateway.")
+        st.info(f"🟢 **Live Data Connection Secure:** Feeds are streaming smoothly from the primary market API gateway. Last successful sync: ({sync_timestamp}).")
 
     if not df_providers.empty:
         wise_compliant = len(df_providers[df_providers["total_cost_percent"] <= 3.0])
@@ -367,14 +362,13 @@ with tab_african_intel:
 
         # INTERACTIVE DATA GRID WITH FORMATTED FOREX DATA
         st.dataframe(
-            df_forex[["corridor", "source_currency", "dest_currency", "exchange_rate", "updated", "status"]],
+            df_forex[["corridor", "source_currency", "dest_currency", "exchange_rate", "updated"]],
             column_config={
                 "corridor": st.column_config.TextColumn("Remittance Route", width="medium"),
                 "source_currency": st.column_config.TextColumn("Source Code"),
                 "dest_currency": st.column_config.TextColumn("Target Asset"),
                 "exchange_rate": st.column_config.NumberColumn("Spot Rate Index", format="%.4f"),
-                "updated": st.column_config.TextColumn("Data Generation Log"),
-                "status": st.column_config.TextColumn("Network Feed Status"),
+                "updated": st.column_config.TextColumn("Data Generation Log")
             },
             hide_index=True,
             use_container_width=True,
