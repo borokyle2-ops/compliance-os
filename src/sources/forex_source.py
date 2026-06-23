@@ -124,7 +124,7 @@ def fetch_forex_rates():
             return "USE_CACHE"
 
         df_forex = pd.DataFrame(corridor_forex)
-        print(f"✅ Successfully compiled {len(df_forex)} real-time African corridor forex vectors.")
+        print(f"Successfully compiled {len(df_forex)} real-time African corridor forex vectors.")
         return df_forex
 
     except Exception as e:
@@ -137,7 +137,7 @@ def store_forex_rates(df_forex):
     try:
         # ---- OFFLINE HANDLING CRITERIA ----
         if isinstance(df_forex, str) and df_forex == "USE_CACHE":
-            print("💾 Graceful Fallback: System offline. Preserving historical data points.")
+            print("Graceful Fallback: System offline. Preserving historical data points.")
             
             # Check if database schema exists before updating status fields
             table_check = conn.execute(
@@ -151,7 +151,7 @@ def store_forex_rates(df_forex):
             
         # ---- ONLINE RUNTIME CRITERIA ----
         if df_forex.empty:
-            print("⚠️ Storage action bypassed: DataFrame layout empty.")
+            print("Storage action bypassed: DataFrame layout empty.")
             return False
 
         conn.execute("DROP TABLE IF EXISTS dim_forex_rates")
@@ -168,10 +168,10 @@ def store_forex_rates(df_forex):
         """)
 
         conn.execute("INSERT INTO dim_forex_rates SELECT * FROM df_forex")
-        print(f"💾 Institutional Sync: {len(df_forex)} vectors committed to dim_forex_rates.")
+        print(f"Institutional Sync: {len(df_forex)} vectors committed to dim_forex_rates.")
         return True
     except Exception as e:
-        print(f"❌ Database commitment exception: {e}")
+        print(f"Database commitment exception: {e}")
         return False
     finally:
         conn.close()
