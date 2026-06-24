@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 import duckdb
 from src.alerts import scan_corridor_anomalies
@@ -28,13 +28,35 @@ st.markdown("""
 
 DB_FILE = Path("data/compliance_os.db")
 
-# ENFORCE DATA ENGINE SAFETY VALVE
-if not DB_FILE.exists():
-    st.error("Analytical database footprint missing. Please run 'python src/ingestion.py' in your terminal first.")
-    st.stop()
+# AUTOMATED ON-DEMAND ETL ENGINE
+def auto_check_and_sync_pipeline():
+    """Checks if the data file is current. If not, runs ingestion automatically inline."""
+    should_sync = False
+    
+    if not DB_FILE.exists():
+        should_sync = True
+    else:
+        # Check if the database file was last modified on a previous day
+        file_last_modified_date = datetime.fromtimestamp(DB_FILE.stat().st_mtime).date()
+        if file_last_modified_date < date.today():
+            should_sync = True
+
+    if should_sync:
+        try:
+            # Dynamically import and run the pipeline inside the cloud runtime container
+            from src.ingestion import run_etl_pipeline
+            success = run_etl_pipeline()
+            if success:
+                st.cache_data.clear()
+        except Exception as e:
+            # Fail silently to allow layout reading if offline or api down
+            pass
+
+# Trigger the auto-sync check immediately on every page load execution
+auto_check_and_sync_pipeline()
 
 # HIGH-SPEED DATABASE EXTRACT
-@st.cache_data(ttl=300) # Caches results for 5 minutes
+@st.cache_data(ttl=3600) # Caches results for 1 hour to maintain extreme snappiness
 def fetch_ui_payload():
     conn = duckdb.connect(str(DB_FILE), read_only=True)
     df_payload = conn.execute("""
@@ -51,7 +73,7 @@ def fetch_ui_payload():
     return df_payload
 
 # CACHED FETCH ROUTINES FOR SECONDARY METRICS
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def fetch_african_intelligence():
     conn = duckdb.connect(str(DB_FILE), read_only=True)
     
