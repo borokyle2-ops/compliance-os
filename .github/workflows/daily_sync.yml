@@ -1,12 +1,12 @@
-name: Daily Forex Data Sync
+name: ComplianceOS Daily Data Sync
 
 on:
   schedule:
-    - cron: '0 6 * * *' # Automatically runs every day at 6:00 AM UTC
-  workflow_dispatch: # Gives you a manual trigger button in the GitHub Actions UI
+    - cron: '0 6 * * *'  # 6:00 AM UTC daily = 9:00 AM Nairobi time
+  workflow_dispatch:       # Manual trigger button in GitHub Actions UI
 
 permissions:
-  contents: write # Important: Allows the cloud runner to save data back to your repo
+  contents: write          # Allows runner to commit DB back to repo
 
 jobs:
   sync_data:
@@ -16,23 +16,35 @@ jobs:
       - name: Checkout Repository Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Run Data Pipeline Ingestion
-        run: |
-          python src/ingestion.py
+      - name: Create data directory if missing
+        run: mkdir -p data
 
-      - name: Commit and Push Changes back to GitHub
+      - name: Verify corridor_data.xlsx is present
         run: |
-          git config --global user.name "GitHub Actions Bot"
+          if [ ! -f "corridor_data.xlsx" ]; then
+            echo "corridor_data.xlsx not found — downloading from World Bank..."
+            curl -L "https://remittanceprices.worldbank.org/sites/default/files/rpw_dataset_2011_2025_q1.xlsx" \
+              -o corridor_data.xlsx
+          else
+            echo "corridor_data.xlsx found — using existing file."
+          fi
+
+      - name: Run Full Pipeline (Ingestion + Forex + Wise)
+        run: python pipeline.py
+
+      - name: Commit Updated Database Back to GitHub
+        run: |
+          git config --global user.name "ComplianceOS Data Bot"
           git config --global user.email "actions@github.com"
           git add data/compliance_os.db
-          git commit -m "Automated daily Forex & Wise data sync [skip ci]" || exit 0
+          git diff --staged --quiet && echo "No data changes to commit." || \
+            git commit -m "data: automated daily sync $(date +'%Y-%m-%d %H:%M UTC') [skip ci]"
           git push
