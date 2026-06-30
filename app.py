@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ENGINE BRAND THEME
+# ENGINE BRAND THEME (UPDATED WITH FLUID RESPONSIVE METRIC STYLE OVERRIDES)
 st.markdown("""
 <style>
     .main { background-color: #0f1117; }
@@ -23,6 +23,13 @@ st.markdown("""
     h3 { font-family: 'Inter', sans-serif; margin-top: 20px;}
     .stMetric { background: #1e2130; border-radius: 8px; padding: 15px; border: 1px solid #2d3142; }
     [data-testid="stSidebar"]  { background-color: #11141e;}
+    
+    /* FIX: Force container metrics text fields to resize gracefully matching viewport dimensions */
+    [data-testid="stMetricValue"] {
+        font-size: min(1.7vw, 22px) !important;
+        white-space: normal !important;
+        word-break: break-all !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
