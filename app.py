@@ -53,7 +53,7 @@ def auto_check_and_sync_pipeline():
 auto_check_and_sync_pipeline()
 
 # HIGH-SPEED DATABASE EXTRACT
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=21600)
 def fetch_ui_payload():
     conn = duckdb.connect(str(DB_FILE), read_only=True)
     df_payload = conn.execute("""
@@ -188,9 +188,9 @@ st.sidebar.caption(f"**Data Engine:** Connected (DuckDB)")
 # FIX 1: Show per-source timestamps — sidebar now shows real data freshness per table
 st.sidebar.divider()
 st.sidebar.caption("**Data Source Freshness**")
-st.sidebar.caption(f"🌍 World Bank: `{sync['corridors']}`")
-st.sidebar.caption(f"💱 Forex Rates: `{sync['forex']}`")
-st.sidebar.caption(f"🏦 Wise Pricing: `{sync['wise']}`")
+st.sidebar.caption(f"World Bank: `{sync['corridors']}`")
+st.sidebar.caption(f"Forex Rates: `{sync['forex']}`")
+st.sidebar.caption(f"Wise Pricing: `{sync['wise']}`")
 
 if st.sidebar.button("Force Synchronize Pipelines", use_container_width=True):
     from src.ingestion import run_etl_pipeline
