@@ -15,20 +15,35 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ENGINE BRAND THEME (UPDATED WITH FLUID RESPONSIVE METRIC STYLE OVERRIDES)
+# DYNAMIC ENGINE THEME (THEME-AWARE ACROSS LIGHT & DARK MODES)
 st.markdown("""
 <style>
-    .main { background-color: #0f1117; }
+    /* Use Streamlit native design variables for perfect theme compatibility */
     h1 { color: #00CC66 !important; font-family: 'Inter', sans-serif; }
     h3 { font-family: 'Inter', sans-serif; margin-top: 20px;}
-    .stMetric { background: #1e2130; border-radius: 8px; padding: 15px; border: 1px solid #2d3142; }
-    [data-testid="stSidebar"]  { background-color: #11141e;}
+    
+    /* Dynamic Theme-Aware Custom Cards */
+    .stMetric { 
+        background-color: var(--secondary-background-color) !important; 
+        color: var(--text-color) !important;
+        border-radius: 8px; 
+        padding: 15px; 
+        border: 1px solid rgba(128, 128, 128, 0.15) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    
+    /* Handle metric label color adjustments for light/dark visibility balance */
+    [data-testid="stMetricLabel"] {
+        color: var(--text-color) !important;
+        opacity: 0.8;
+    }
     
     /* FIX: Force container metrics text fields to resize gracefully matching viewport dimensions */
     [data-testid="stMetricValue"] {
+        color: var(--text-color) !important;
         font-size: min(1.7vw, 22px) !important;
         white-space: normal !important;
-        word-break: break-all !important;
+        word-break: break-word !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -165,12 +180,12 @@ def check_data_freshness():
 
         if forex_age is not None and forex_age > 24:
             warnings.append(
-                f"⚠️ **Forex data is {forex_age} hours old.** "
+                f"**Forex data is {forex_age} hours old.** "
                 f"Run `python pipeline.py` to refresh live rates."
             )
         if forex_age is not None and forex_age > 72:
             warnings.append(
-                f"🔴 **Critical: Forex data is {forex_age} hours old.** "
+                f"**Critical: Forex data is {forex_age} hours old.** "
                 f"Dashboard rates may no longer reflect market conditions."
             )
     except Exception:
@@ -181,8 +196,8 @@ def check_data_freshness():
 # EXECUTE DATA LOADS
 df = fetch_ui_payload()
 df_providers, df_forex = fetch_african_intelligence()
-sync = fetch_sync_status()           # FIX 1
-freshness_warnings = check_data_freshness()  # FIX 2
+sync = fetch_sync_status() 
+freshness_warnings = check_data_freshness() 
 
 # SIDEBAR CONTROLLER
 st.sidebar.image(
@@ -192,7 +207,7 @@ st.sidebar.image(
 st.sidebar.title("ComplianceOS")
 st.sidebar.caption(f"**Data Engine:** Connected (DuckDB)")
 
-# FIX 1: Show per-source timestamps — sidebar now shows real data freshness per table
+# Show per-source timestamps — sidebar now shows real data freshness per table
 st.sidebar.divider()
 st.sidebar.caption("**Data Source Freshness**")
 st.sidebar.caption(f"World Bank: `{sync['corridors']}`")
@@ -236,7 +251,7 @@ if selected_status:
 st.title("G20 Remittance Compliance Engine")
 st.caption("Automated Market Intelligence Infrastructure | Tracking UN Sustainable Development Goal 10.c")
 
-# FIX 2: Show staleness warnings at the top of the dashboard if data is old
+# Show staleness warnings at the top of the dashboard if data is old
 if freshness_warnings:
     for w in freshness_warnings:
         st.warning(w)
@@ -307,7 +322,8 @@ with tab_dashboard:
         )
         fig_pie.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
-            font_color="white",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="var(--text-color)"),
             margin=dict(t=30, b=10, l=10, r=10),
             legend=dict(orientation="h", yanchor="bottom", y=-0.12, xanchor="center", x=0.5)
         )
@@ -341,10 +357,10 @@ with tab_dashboard:
         )
         fig_hist.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="#1e2130",
-            font_color="white",
-            xaxis_title="Total Cost %",
-            yaxis_title="Corridor Frequency",
+            plot_bgcolor="rgba(128, 128, 128, 0.05)",
+            font=dict(color="var(--text-color)"),
+            xaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)", title="Total Cost %"),
+            yaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)", title="Corridor Frequency"),
             xaxis_range=[0, 22],
             margin=dict(t=30, b=10, l=10, r=10),
             showlegend=False
@@ -384,8 +400,10 @@ with tab_dashboard:
         fig_bar.update_layout(
             barmode='group',
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="#1e2130",
-            font_color="white",
+            plot_bgcolor="rgba(128, 128, 128, 0.05)",
+            font=dict(color="var(--text-color)"),
+            xaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)"),
+            yaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)"),
             height=500,
             margin=dict(t=40, b=20, l=10, r=40),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0)
@@ -439,19 +457,16 @@ with tab_african_intel:
         st.subheader("African Corridor Intelligence")
         st.caption("Multi-source comparison: World Bank vs Commercial providers vs Live FX")
     with col_b:
-        # FIX 1: Use real forex table timestamp, not file mtime
         st.metric("Last Forex Sync", sync["forex"][:10] if sync["forex"] != "N/A" else "N/A")
 
-    # FIX 2: Staleness warning inside the African tab too
     if freshness_warnings:
         for w in freshness_warnings:
             st.warning(w)
 
     # SMART NETWORK STATUS ALERT
     if not df_forex.empty:
-        # FIX 1: Use the real per-table sync timestamp here too
         st.info(
-            f"🟢 **Live Data Connection Secure:** Feeds are streaming smoothly from the "
+            f"**Live Data Connection Secure:** Feeds are streaming smoothly from the "
             f"primary market API gateway. Last successful sync: **({sync['forex']})**."
         )
 
@@ -460,7 +475,7 @@ with tab_african_intel:
         wise_total = len(df_providers)
         global_rate = round(compliance_rate, 1)
         st.success(
-            f"🚀 **{wise_compliant}/{wise_total} Wise-covered corridors** meet the G20 3% target"
+            f"**{wise_compliant}/{wise_total} Wise-covered corridors** meet the G20 3% target"
             f" - vs only **{global_rate}%** compliance on traditional rails globally. "
             f"Fintech channels represent a structural efficiency milestone."
         )
@@ -510,17 +525,16 @@ with tab_african_intel:
             )
             fig_provider.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="#1e2130",
-                font_color="white",
-                xaxis_title="Transfer Cost %",
-                yaxis_title="",
+                plot_bgcolor="rgba(128, 128, 128, 0.05)",
+                font=dict(color="var(--text-color)"),
+                xaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)", title="Transfer Cost %"),
+                yaxis=dict(gridcolor="rgba(128, 128, 128, 0.1)", title=""),
                 height=chart_height,
                 coloraxis_showscale=False,
-                yaxis={'categoryorder': 'total ascending'}
+                yaxis_categoryorder='total ascending'
             )
             st.plotly_chart(fig_provider, use_container_width=True)
 
-        # FIX 1: Show Wise data timestamp separately so users know its freshness
         st.caption(f"Wise pricing model last updated: **{sync['wise']}**")
 
     else:
@@ -531,7 +545,6 @@ with tab_african_intel:
     # FOREX SPOT RATES TABLE
     if not df_forex.empty:
         st.subheader("Live African Corridor Forex Spot Rates")
-        # FIX 1: Caption now uses real table timestamp, not file mtime
         st.caption(
             f"**{len(df_forex)} active** tracked African corridor channels | "
             f"Last sync: **{sync['forex']}**"
